@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon vs Flipkart vs Meesho Shipping Labels — What's Different</title>
+<meta name="description" content="A comparison of how Amazon, Flipkart, and Meesho generate shipping label PDFs in India — invoice handling, SKU formatting, and courier information — and how InStitch processes each.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#14161a;color:#e8e9eb;line-height:1.65}
+  .wrap{max-width:680px;margin:0 auto;padding:40px 20px 80px}
+  a{color:#FF9900}
+  .back{display:inline-block;margin-bottom:24px;color:#9aa0aa;text-decoration:none;font-size:14px}
+  .back:hover{color:#e8e9eb}
+  h1{font-size:26px;font-weight:700;margin-bottom:6px;color:#f0f1f3}
+  .tagline{color:#9aa0aa;font-size:14px;margin-bottom:36px}
+  h2{font-size:18px;font-weight:600;margin:36px 0 12px;color:#f0f1f3;border-top:1px solid #2b2f37;padding-top:28px}
+  h2:first-of-type{border-top:none;padding-top:0;margin-top:0}
+  h3{font-size:14px;font-weight:600;color:#FF9900;margin:18px 0 6px}
+  p{color:#c9cdd3;font-size:14.5px;margin-bottom:12px}
+  ul{color:#c9cdd3;font-size:14.5px;margin:0 0 12px 20px}
+  li{margin-bottom:6px}
+  .platform-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;margin-bottom:4px}
+  .badge-amazon{background:#3d2e00;color:#FF9900}
+  .badge-flipkart{background:#0d2c4d;color:#5b9bd5}
+  .badge-meesho{background:#3d1a2e;color:#e85d9e}
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+  th{text-align:left;color:#9aa0aa;font-weight:600;padding:8px 10px;border-bottom:1px solid #2b2f37}
+  td{padding:8px 10px;border-bottom:1px solid #22262d;color:#c9cdd3}
+  .nav-links{display:flex;gap:16px;margin-top:32px;font-size:13px}
+  footer{margin-top:48px;color:#565c66;font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./index.html">← Back to InStitch</a>
+  <h1>Amazon vs Flipkart vs Meesho Labels</h1>
+  <p class="tagline">Why the same job needs three different approaches</p>
+
+  <p>If you sell across all three platforms, you've probably noticed their shipping label PDFs don't look — or behave — anything alike. Here's what's actually different, and how InStitch handles each one.</p>
+
+  <table>
+    <tr><th></th><th>Amazon</th><th>Flipkart</th><th>Meesho</th></tr>
+    <tr><td>Invoice included?</td><td>Yes, separate page(s)</td><td>Yes, same page as label</td><td>Yes, same page as label</td></tr>
+    <tr><td>SKU location</td><td>Invoice table</td><td>On-label SKU table</td><td>On-label Product Details table</td></tr>
+    <tr><td>Courier shown on label?</td><td>Rarely</td><td>Yes (e.g. E-Kart)</td><td>Yes (e.g. Delhivery, Shadowfax)</td></tr>
+    <tr><td>Typical label size</td><td>4x6 thermal</td><td>4x6 thermal (cropped from A4)</td><td>Full A4 page</td></tr>
+  </table>
+
+  <h2><span class="platform-badge badge-amazon">AMAZON</span></h2>
+  <p>Amazon's label PDFs bundle the actual shipping label together with one or more full tax invoice pages per order. The SKU and quantity aren't printed in human-readable form directly on the label itself — you have to cross-reference the invoice page to know what's actually inside the package, which is slow when you're packing dozens of orders back to back.</p>
+  <h3>How InStitch handles it</h3>
+  <p>Strips out the invoice pages entirely, extracts the SKU and quantity from the order data, and redraws the label with that information (plus your custom translation, if loaded) clearly visible — so you can identify the product without flipping to a second page.</p>
+
+  <h2><span class="platform-badge badge-flipkart">FLIPKART</span></h2>
+  <p>Flipkart prints the shipping label and the tax invoice on the <em>same</em> page, stacked vertically — the label sits at the top (barcode, QR code, address, SKU table) and the invoice fills the rest. Sellers usually only want the top portion for packing.</p>
+  <h3>How InStitch handles it</h3>
+  <p>Detects the boundary between the label and the invoice using the layout markers Flipkart consistently prints (like the "Not for resale" line), then crops out just the label portion as a clean vector image — no loss of print quality — with your translation added as a small strip underneath.</p>
+
+  <h2><span class="platform-badge badge-meesho">MEESHO</span></h2>
+  <p>Meesho also combines the label and invoice on one A4 page, but unlike Flipkart, sellers commonly keep the whole page together for their records (courier name, SKU, and quantity all appear on that same top section). Different orders can also be shipped by different couriers (Delhivery, Shadowfax, and others), which matters when you're organizing packages by pickup.</p>
+  <h3>How InStitch handles it</h3>
+  <p>Reads the courier name, SKU, and quantity from each page, then reorganizes the whole set of labels — grouped by courier, then SKU, then quantity — so you can pack in batches without hunting through a random page order. The full original page (label + invoice) is kept intact, with the translation strip added at the very bottom.</p>
+
+  <h2>Why one tool instead of three</h2>
+  <p>Since each platform's PDF structure is genuinely different, most sellers end up manually eyeballing which platform a file came from, then using a different process for each. InStitch auto-detects the platform per file — even in a single batch upload mixing all three — so you can process everything for the day in one pass.</p>
+
+  <div class="nav-links">
+    <a href="./how-to.html">How to use InStitch →</a>
+    <a href="./faq.html">FAQ →</a>
+    <a href="./about.html">About & Privacy →</a>
+  </div>
+
+  <footer>InStitch · Made in India</footer>
+</div>
+</body>
+</html>

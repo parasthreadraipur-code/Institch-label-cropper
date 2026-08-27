@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Use InStitch — Step-by-Step Guide</title>
+<meta name="description" content="Step-by-step guide to using InStitch to process Amazon, Flipkart, and Meesho shipping labels: uploading PDFs, auto-detection, adding SKU translations, and downloading print-ready labels.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#14161a;color:#e8e9eb;line-height:1.65}
+  .wrap{max-width:680px;margin:0 auto;padding:40px 20px 80px}
+  a{color:#FF9900}
+  .back{display:inline-block;margin-bottom:24px;color:#9aa0aa;text-decoration:none;font-size:14px}
+  .back:hover{color:#e8e9eb}
+  h1{font-size:26px;font-weight:700;margin-bottom:6px;color:#f0f1f3}
+  .tagline{color:#9aa0aa;font-size:14px;margin-bottom:36px}
+  h2{font-size:17px;font-weight:600;margin:36px 0 10px;color:#f0f1f3;border-top:1px solid #2b2f37;padding-top:28px}
+  h2:first-of-type{border-top:none;padding-top:0;margin-top:0}
+  p{color:#c9cdd3;font-size:14.5px;margin-bottom:12px}
+  ul,ol{color:#c9cdd3;font-size:14.5px;margin:0 0 12px 20px}
+  li{margin-bottom:8px}
+  .step-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#FF9900;color:#1a1a1a;border-radius:50%;font-size:12px;font-weight:700;margin-right:8px;flex-shrink:0}
+  .step{display:flex;align-items:flex-start;margin-bottom:18px}
+  .step-text{flex:1}
+  .step-text strong{color:#f0f1f3}
+  code{background:#1b1e24;border:1px solid #2b2f37;border-radius:4px;padding:2px 6px;font-size:13px;color:#e8e9eb}
+  .tip-box{background:#1b1e24;border:1px solid #2b2f37;border-left:3px solid #FF9900;border-radius:8px;padding:14px 16px;margin:16px 0;font-size:14px;color:#c9cdd3}
+  .nav-links{display:flex;gap:16px;margin-top:8px;font-size:13px}
+  footer{margin-top:48px;color:#565c66;font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./index.html">← Back to InStitch</a>
+  <h1>How to Use InStitch</h1>
+  <p class="tagline">Process Amazon, Flipkart, and Meesho shipping labels in under a minute</p>
+
+  <h2>Getting started</h2>
+  <div class="step">
+    <span class="step-num">1</span>
+    <div class="step-text"><strong>Download your label PDFs</strong> from Amazon Seller Central, Flipkart Seller Hub, or the Meesho Supplier Panel — the same PDFs you'd normally send straight to your printer.</div>
+  </div>
+  <div class="step">
+    <span class="step-num">2</span>
+    <div class="step-text"><strong>Open InStitch</strong> and drag your PDF file onto the upload area, or tap "Choose PDF file". You can upload files from any of the three platforms — InStitch detects which one automatically, so there's no need to select a platform first.</div>
+  </div>
+  <div class="step">
+    <span class="step-num">3</span>
+    <div class="step-text"><strong>Wait a few seconds</strong> while InStitch reads the PDF, strips out anything you don't need (like Amazon's invoice pages), and extracts each label's SKU and quantity.</div>
+  </div>
+  <div class="step">
+    <span class="step-num">4</span>
+    <div class="step-text"><strong>Review the labels</strong> in the results grid. Untick any you don't want to include, or use the search box to find a specific order.</div>
+  </div>
+  <div class="step">
+    <span class="step-num">5</span>
+    <div class="step-text"><strong>Download</strong> your selected labels (or all of them) as a single print-ready PDF, sorted and cleaned up for packing.</div>
+  </div>
+
+  <h2>Adding SKU translations</h2>
+  <p>If you want each label to show a translated or simplified product name below the SKU — useful when your packing staff read a different language than English — InStitch can add that automatically.</p>
+  <div class="step">
+    <span class="step-num">1</span>
+    <div class="step-text">Click <strong>⬇ Template</strong> at the top of the page to download a starter CSV file with the correct column format.</div>
+  </div>
+  <div class="step">
+    <span class="step-num">2</span>
+    <div class="step-text">Open the CSV in Excel or Google Sheets. Fill in your SKUs in the first column and the matching translation or note in the second column — this can be in any language, not just Hindi.</div>
+  </div>
+  <div class="step">
+    <span class="step-num">3</span>
+    <div class="step-text">Save the file, then click <strong>📋 Load SKU sheet</strong> and select it. InStitch remembers this sheet in your browser, so you only need to upload it once — it'll still be there next time you open the app on the same device.</div>
+  </div>
+
+  <div class="tip-box">
+    💡 <strong>Tip:</strong> the translation appears as a small strip directly below each label, alongside the quantity — the original label content (barcode, address, SKU table) is never modified or covered.
+  </div>
+
+  <h2>Frequently needed actions</h2>
+  <ul>
+    <li><strong>Wrong SKU sheet loaded?</strong> Just load a new CSV — it merges with (and overwrites matching entries in) whatever was already loaded.</li>
+    <li><strong>Want to start over?</strong> Use the "Start over" button in the results view to clear everything and upload a fresh file.</li>
+    <li><strong>Using InStitch offline?</strong> Once you've opened it while online at least once, it keeps working without an internet connection — your browser caches the app itself (not your label files).</li>
+  </ul>
+
+  <h2>Still stuck?</h2>
+  <p>Check the <a href="./faq.html">FAQ page</a> for common questions, or reach out directly at <a href="mailto:institchindia@gmail.com">institchindia@gmail.com</a>.</p>
+
+  <div class="nav-links">
+    <a href="./faq.html">FAQ →</a>
+    <a href="./platforms-guide.html">Platform differences →</a>
+    <a href="./about.html">About & Privacy →</a>
+  </div>
+
+  <footer>InStitch · Made in India</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InStitch FAQ — Common Questions Answered</title>
+<meta name="description" content="Frequently asked questions about InStitch: data privacy, supported platforms, SKU translation, offline use, and troubleshooting for Amazon, Flipkart, and Meesho shipping labels.">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#14161a;color:#e8e9eb;line-height:1.65}
+  .wrap{max-width:680px;margin:0 auto;padding:40px 20px 80px}
+  a{color:#FF9900}
+  .back{display:inline-block;margin-bottom:24px;color:#9aa0aa;text-decoration:none;font-size:14px}
+  .back:hover{color:#e8e9eb}
+  h1{font-size:26px;font-weight:700;margin-bottom:6px;color:#f0f1f3}
+  .tagline{color:#9aa0aa;font-size:14px;margin-bottom:36px}
+  .faq-item{border-bottom:1px solid #2b2f37;padding:20px 0}
+  .faq-item:first-child{padding-top:0}
+  .faq-q{font-size:15.5px;font-weight:600;color:#f0f1f3;margin-bottom:8px}
+  .faq-a{font-size:14.5px;color:#c9cdd3}
+  .faq-a p{margin-bottom:8px}
+  .faq-a p:last-child{margin-bottom:0}
+  code{background:#1b1e24;border:1px solid #2b2f37;border-radius:4px;padding:2px 6px;font-size:13px;color:#e8e9eb}
+  .nav-links{display:flex;gap:16px;margin-top:32px;font-size:13px}
+  footer{margin-top:48px;color:#565c66;font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./index.html">← Back to InStitch</a>
+  <h1>Frequently Asked Questions</h1>
+  <p class="tagline">Everything sellers commonly ask about InStitch</p>
+
+  <div class="faq-item">
+    <div class="faq-q">Is InStitch really free?</div>
+    <div class="faq-a"><p>Yes. There's no signup, no subscription, and no usage limit. InStitch is a side project built by a fellow seller to solve a shared problem, and it's shared publicly so other sellers don't have to deal with the same daily hassle.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Does InStitch upload my labels or customer data anywhere?</div>
+    <div class="faq-a"><p>No. Every PDF you upload is processed entirely inside your own browser using JavaScript — nothing is sent to a server. This means customer names, addresses, and order details in your shipping labels never leave your device. See the full <a href="./about.html">Privacy Policy</a> for details.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Which platforms does InStitch support?</div>
+    <div class="faq-a"><p>Amazon, Flipkart, and Meesho shipping labels are all supported, with automatic detection — you don't need to tell InStitch which platform a file came from. See the <a href="./platforms-guide.html">platform differences guide</a> for how each one is handled.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Can I upload files from multiple platforms at once?</div>
+    <div class="faq-a"><p>Yes. You can select or drag multiple PDFs together, even if they're a mix of Amazon, Flipkart, and Meesho files — InStitch sorts out which pipeline to use for each one automatically.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Does the SKU translation have to be in Hindi?</div>
+    <div class="faq-a"><p>No — it can be any language, or even just a shorter/simplified English product name. InStitch just looks up whatever text you put next to each SKU in your uploaded sheet and prints it on the label. It's really a general-purpose "note per SKU" feature, not specifically a Hindi translator.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">I uploaded my SKU sheet, but no translation showed up. Why?</div>
+    <div class="faq-a"><p>The most common reason is a mismatch between the SKU exactly as it appears in your CSV and the SKU exactly as it appears in the platform's PDF (extra spaces, different capitalization, or a slightly different SKU code used internally). Double-check the SKU column against what's printed in the "SKU ID" or "SKU" field of the original label.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Will my SKU sheet stay saved if I close the tab?</div>
+    <div class="faq-a"><p>Yes. Once loaded, your SKU sheet is saved in your browser's local storage on that device, so it's still there the next time you open InStitch — you don't need to re-upload it every session. It's tied to your browser and device though, so it won't automatically appear if you switch to a different phone or computer.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Does InStitch work offline?</div>
+    <div class="faq-a"><p>Yes, after your first visit. InStitch is a Progressive Web App, meaning your browser caches the app itself so it keeps working without an internet connection. You can even "install" it to your home screen for quicker access.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Can I use InStitch on my phone?</div>
+    <div class="faq-a"><p>Yes, it works in any modern mobile browser. On iPhone, make sure you're using the "Choose PDF file" button rather than trying to take a photo — InStitch needs the actual PDF file, not an image of it.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Does InStitch modify or remove anything from my original labels?</div>
+    <div class="faq-a"><p>For Amazon, the invoice pages are separated out and the label is redrawn with your SKU translation and quantity added. For Flipkart and Meesho, the original label is kept fully intact — cropped for Flipkart, whole-page for Meesho — with only a thin translation strip added below it. Nothing on the original label itself (barcode, QR code, address, SKU table) is ever altered.</p></div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q">Something isn't working right — how do I report it?</div>
+    <div class="faq-a"><p>Email <a href="mailto:institchindia@gmail.com">institchindia@gmail.com</a> with a description of what happened. If possible, mention which platform (Amazon/Flipkart/Meesho) and roughly what the label looked like — that helps track down the issue faster.</p></div>
+  </div>
+
+  <div class="nav-links">
+    <a href="./how-to.html">How to use InStitch →</a>
+    <a href="./platforms-guide.html">Platform differences →</a>
+    <a href="./about.html">About & Privacy →</a>
+  </div>
+
+  <footer>InStitch · Made in India</footer>
+</div>
+</body>
+</html>
