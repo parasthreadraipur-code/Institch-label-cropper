@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>InStitch — Amazon, Flipkart & Meesho Label Processor</title>
+<meta name="description" content="Free browser-based tool for e-commerce sellers to process shipping labels from Amazon, Flipkart, and Meesho — auto-detects platform, crops labels, and sorts by SKU and quantity for packing. Nothing is uploaded to a server.">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="./icons/icon-16.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="InStitch">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#14161a;color:#e8e9eb;min-height:100vh}
+.hdr{background:#1b1e24;border-bottom:1px solid #2b2f37;padding:14px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.hdr-icon{width:32px;height:32px;background:#FF9900;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hdr-icon svg{width:18px;height:18px;fill:#fff}
+.hdr h1{font-size:17px;font-weight:600;color:#f0f1f3}
+.hdr-sku{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:#9aa0aa}
+.hdr-sku label{cursor:pointer;background:#22262d;border:1px solid #33383f;border-radius:6px;padding:5px 12px;transition:all .15s;color:#c9cdd3}
+.hdr-sku label:hover{background:#2a2f37}
+.hdr-sku label.loaded{background:#173321;border-color:#2d6a45;color:#6fcf97}
+#sku-input{display:none}
+.sku-badge{font-size:11px;background:#FF9900;color:#1a1a1a;padding:2px 7px;border-radius:10px;font-weight:600}
+.courier-badge{font-size:10px;background:#7C3AED;color:#fff;padding:2px 7px;border-radius:10px;font-weight:600;margin-right:6px;display:inline-block}
+
+.main{max-width:880px;margin:32px auto;padding:0 16px}
+
+.upload-zone{background:#1b1e24;border:2px dashed #33383f;border-radius:12px;padding:50px 32px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-zone:hover,.upload-zone.drag-over{border-color:#FF9900;background:#211c14}
+.upload-zone svg{width:44px;height:44px;stroke:#565c66;margin-bottom:14px}
+.upload-zone h2{font-size:17px;font-weight:500;margin-bottom:6px;color:#f0f1f3}
+.upload-zone p{color:#9aa0aa;font-size:13px}
+.btn-upload{margin-top:16px;display:inline-block;background:#FF9900;color:#1a1a1a;padding:9px 22px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;border:none}
+.btn-upload:hover{background:#ffab26}
+#file-input{display:none}
+
+.processing{background:#1b1e24;border-radius:12px;padding:40px;text-align:center;display:none}
+.spinner{width:36px;height:36px;border:3px solid #2b2f37;border-top-color:#FF9900;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.processing p{color:#c9cdd3;font-size:14px}
+.processing .sub{color:#8a909a;font-size:12px;margin-top:5px}
+.prog-bar{width:100%;height:4px;background:#2b2f37;border-radius:2px;margin-top:14px;overflow:hidden}
+.prog-fill{height:100%;background:#FF9900;border-radius:2px;transition:width .3s;width:0%}
+
+.results{display:none}
+.res-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.res-hdr h2{font-size:16px;font-weight:600;color:#f0f1f3}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-primary{background:#FF9900;color:#1a1a1a;font-weight:600}.btn-primary:hover{background:#ffab26}
+.btn-secondary{background:#22262d;color:#dfe1e5;border:1px solid #33383f}.btn-secondary:hover{background:#2a2f37}
+.btn-danger{background:#22262d;color:#ef5350;border:1px solid #33383f}.btn-danger:hover{background:#301f20}
+
+.toolbar{background:#1b1e24;border-radius:10px;border:1px solid #2b2f37;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.toolbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;gap:6px;background:#14161a;border-radius:7px;padding:6px 10px;border:1px solid #2b2f37}
+.search-box input{border:none;background:transparent;font-size:13px;outline:none;width:180px;color:#e8e9eb}
+.search-box svg{width:14px;height:14px;stroke:#8a909a;flex-shrink:0}
+.count-badge{font-size:13px;color:#9aa0aa}
+.count-badge strong{color:#f0f1f3}
+.sel-all-row{display:flex;align-items:center;gap:6px;font-size:13px;color:#9aa0aa;cursor:pointer;user-select:none}
+.sel-all-row input{width:15px;height:15px;accent-color:#FF9900;cursor:pointer}
+
+.labels-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-bottom:20px}
+.label-card{background:#1b1e24;border-radius:10px;border:2px solid #2b2f37;overflow:hidden;transition:border-color .15s,box-shadow .15s;position:relative}
+.label-card.selected{border-color:#FF9900;box-shadow:0 0 0 3px rgba(255,153,0,.18)}
+.label-card.hidden{display:none}
+.chk{position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:#22262d;border:2px solid #454b54;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:2;cursor:pointer}
+.label-card.selected .chk{background:#FF9900;border-color:#FF9900}
+.label-card.selected .chk svg{display:block}
+.chk svg{display:none;width:11px;height:11px;stroke:#1a1a1a;stroke-width:3;fill:none}
+.canvas-wrap{padding:10px;background:#101216;border-bottom:1px solid #2b2f37;cursor:pointer}
+.canvas-wrap canvas{width:100%;height:auto;border-radius:3px;display:block}
+.info{padding:10px 12px}
+.info .order{font-size:11px;color:#8a909a;margin-bottom:3px}
+.edit-row{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px}
+.edit-row textarea{flex:1;font-size:13px;font-weight:600;border:none;border-bottom:1px solid transparent;outline:none;background:transparent;color:#e8e9eb;padding:1px 0;transition:border-color .15s;min-width:0;resize:none;overflow:hidden;line-height:1.4;font-family:inherit}
+.edit-row input:focus{border-color:#FF9900}
+.edit-icon{width:13px;height:13px;stroke:#565c66;flex-shrink:0;margin-top:3px}
+.meta-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+.qty-wrap{display:flex;align-items:center;gap:4px}
+.qty-label{font-size:11px;color:#9aa0aa;font-weight:500}
+.qty-input{width:40px;font-size:12px;font-weight:700;color:#ffb74d;background:#2e2210;border:1px solid #4a3714;border-radius:12px;padding:1px 6px;text-align:center;outline:none}
+.qty-input:focus{border-color:#FF9900}
+.translation-text{font-size:12px;color:#e8e9eb;font-weight:700;background:#282c33;padding:1px 7px;border-radius:12px}
+.no-translation{font-size:11px;color:#565c66;font-style:italic}
+
+.platform-tabs{display:flex;gap:8px;margin-bottom:20px;justify-content:center}
+.ptab{padding:7px 22px;border-radius:20px;font-size:14px;font-weight:500;border:2px solid #FF9900;background:#FF9900;color:#1a1a1a;display:inline-block}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2c3038;color:#f0f1f3;padding:10px 20px;border-radius:8px;font-size:13px;z-index:100;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;border:1px solid #3a3f47}
+.toast.show{opacity:1}
+
+@media(max-width:600px){
+  .labels-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .res-hdr{flex-direction:column;align-items:flex-start}
+  .search-box input{width:120px}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-icon"><svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM4 5h16M9 19h6"/></svg></div>
+  <h1>InStitch <span style="font-size:12px;color:#888;font-weight:normal">v1.0</span></h1>
+  <div class="hdr-sku">
+    <a id="sku-template" download="institch-sku-template.csv" style="font-size:12px;color:#9aa0aa;text-decoration:underline;cursor:pointer;white-space:nowrap">⬇ Template</a>
+    <label id="sku-label" for="sku-input">📋 Load SKU sheet</label>
+    <input type="file" id="sku-input" accept=".csv">
+    <span class="sku-badge" id="sku-badge" style="display:none"></span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="upload-zone" id="upload-zone">
+    <div class="platform-tabs">
+      <span class="ptab active">🔀 Auto-detect</span>
+    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+    </svg>
+    <h2 id="upload-title">Upload your labels PDF</h2>
+    <p id="upload-desc">Amazon, Flipkart, or Meesho — the platform is detected automatically per file</p>
+    <button class="btn-upload" onclick="document.getElementById('file-input').click()">Choose PDF file</button>
+    <input type="file" id="file-input" accept=".pdf,application/pdf" multiple>
+    <p style="margin-top:10px;font-size:12px;color:#bbb">Or drag & drop · Multiple files supported</p>
+  </div>
+
+  <div class="processing" id="processing">
+    <div class="spinner"></div>
+    <p id="proc-text">Reading PDF...</p>
+    <p class="sub" id="proc-sub">Extracting labels</p>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="res-hdr">
+      <h2 id="res-title">Shipping Labels</h2>
+      <div class="actions">
+        <button class="btn btn-danger" onclick="resetApp()">↩ Start over</button>
+        <button class="btn btn-secondary" onclick="downloadSelected()">⬇ Selected</button>
+        <button class="btn btn-primary" onclick="downloadAll()">⬇ Download all PDF</button>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" placeholder="Search order / product..." oninput="filterLabels()">
+        </div>
+        <span class="count-badge">Found <strong id="label-count">0</strong> labels · invoices removed</span>
+      </div>
+      <label class="sel-all-row">
+        <input type="checkbox" id="sel-all" checked onchange="toggleAll(this.checked)"> Select all
+      </label>
+    </div>
+    <div class="labels-grid" id="labels-grid"></div>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:28px 16px 20px;color:#6b7178;font-size:12px;">
+  InStitch · <a href="./about.html" style="color:#9aa0aa;text-decoration:underline">About &amp; Privacy</a> ·
+  <a href="mailto:institchindia@gmail.com" style="color:#9aa0aa;text-decoration:underline">institchindia@gmail.com</a>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── SKU Map ──────────────────────────────────────────────────────────
+// Starts empty for every new user. Each seller uploads their own SKU→Translation
+// (or any language) CSV, and it is saved to this browser's localStorage so
+// it survives closing the tab/app. Nothing is ever sent to a server.
+const SKU_STORAGE_KEY = 'institch_sku_map_v1';
+let SKU_MAP = {};
+try {
+  const saved = localStorage.getItem(SKU_STORAGE_KEY);
+  if (saved) SKU_MAP = JSON.parse(saved);
+} catch (e) { /* corrupt/blocked storage - fall back to empty map */ }
+
+// ── Runtime SKU override via CSV upload ────────────────────────────
+// Reflect a SKU map already saved from a previous visit, so returning
+// users see their sheet is still loaded instead of an empty-looking state.
+if (Object.keys(SKU_MAP).length) {
+  document.getElementById('sku-label').classList.add('loaded');
+  document.getElementById('sku-label').textContent = '✓ SKU sheet loaded';
+  const badge = document.getElementById('sku-badge');
+  badge.textContent = Object.keys(SKU_MAP).length + ' SKUs';
+  badge.style.display = 'inline';
+}
+
+// ── Downloadable empty SKU sheet template ───────────────────────────
+// A starter CSV so new users know the exact column format InStitch expects.
+(function setupSkuTemplate(){
+  const csvContent = 'SKU,Translation\r\nEXAMPLE-SKU-001,उदाहरण अनुवाद\r\n';
+  const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+  document.getElementById('sku-template').href = URL.createObjectURL(blob);
+})();
+
+document.getElementById('sku-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const text = ev.target.result;
+    const lines = text.trim().split(/\r?\n/);
+    let count = 0;
+    lines.forEach(line => {
+      const parts = line.split(',');
+      if (parts.length >= 2 && parts[0] !== 'SKU') {
+        const sku = parts[0].trim();
+        const translation = parts.slice(1).join(',').trim().replace(/^"|"$/g,'');
+        if (sku) { SKU_MAP[sku] = translation; count++; }
+      }
+    });
+    try { localStorage.setItem(SKU_STORAGE_KEY, JSON.stringify(SKU_MAP)); } catch (e) { /* storage unavailable — map still works for this session */ }
+    document.getElementById('sku-label').classList.add('loaded');
+    document.getElementById('sku-label').textContent = '✓ SKU sheet loaded';
+    const badge = document.getElementById('sku-badge');
+    badge.textContent = Object.keys(SKU_MAP).length + ' SKUs';
+    badge.style.display = 'inline';
+    // Re-match translation for already loaded labels — per item, comma-joined,
+    // since productName can hold multiple "(SKU) Title (Qty: N)" lines
+    // and lookupTranslation() alone only ever returns a single match.
+    extractedLabels.forEach(l => {
+      if(!l.productName) return;
+      const perItemTranslation = l.productName.split('\n').map(lookupTranslation).filter(Boolean);
+      l.translation = perItemTranslation.length ? perItemTranslation.join(', ') : lookupTranslation(l.productName);
+    });
+    if (extractedLabels.length) {
+      // renderResults() rebuilds every card from scratch and defaults each
+      // one to selected — capture what was actually selected/searched first
+      // so reloading a CSV mid-session doesn't quietly wipe the user's
+      // deselections or active search.
+      const deselectedIdx = new Set(
+        [...document.querySelectorAll('.label-card:not(.selected)')].map(c => c.dataset.idx)
+      );
+      const searchVal = document.getElementById('search-input').value;
+      renderResults();
+      deselectedIdx.forEach(idx => {
+        const card = document.querySelector(`.label-card[data-idx="${idx}"]`);
+        if(card) card.classList.remove('selected');
+      });
+      if(searchVal){
+        document.getElementById('search-input').value = searchVal;
+        filterLabels();
+      }
+      updateSelAll();
+    }
+    showToast(`✓ ${count} SKUs loaded`);
+  };
+  reader.readAsText(file, 'utf-8');
+});
+
+function lookupTranslation(productName) {
+  if (!productName) return '';
+  // Try all parenthetical groups — SKU can be in any of them
+  const allParens = [...productName.matchAll(/\(([^)]{2,30})\)/g)];
+  // Check last paren first (most likely SKU), then others
+  const toCheck = allParens.map(m => m[1].trim()).reverse();
+  for (const candidate of toCheck) {
+    if (SKU_MAP[candidate]) return SKU_MAP[candidate];
+    const lower = candidate.toLowerCase();
+    for (const key of Object.keys(SKU_MAP)) {
+      if (key.toLowerCase() === lower) return SKU_MAP[key];
+    }
+  }
+  // Direct substring match as last resort
+  for (const key of Object.keys(SKU_MAP)) {
+    if (productName.includes(key)) return SKU_MAP[key];
+  }
+  return '';
+}
+
+// ── Platform state ───────────────────────────────────────────────────
+// Auto-detect is the only mode now — every uploaded file is sniffed and
+// routed to the matching platform pipeline (see detectFilePlatform).
+let extractedLabels = [];
+
+// ── Upload zone ──────────────────────────────────────────────────────
+const uploadZone = document.getElementById('upload-zone');
+const fileInput  = document.getElementById('file-input');
+uploadZone.addEventListener('dragover', e=>{e.preventDefault();uploadZone.classList.add('drag-over')});
+uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop',e=>{e.preventDefault();uploadZone.classList.remove('drag-over');handleFiles(e.dataTransfer.files)});
+fileInput.addEventListener('change',e=>handleFiles(e.target.files));
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+function setProgress(pct,text,sub){
+  document.getElementById('prog-fill').style.width=pct+'%';
+  if(text)document.getElementById('proc-text').textContent=text;
+  if(sub)document.getElementById('proc-sub').textContent=sub;
+}
+
+// ── Platform auto-detection ─────────────────────────────────────────────
+// Sniffs a file's own content rather than trusting its name, since sellers
+// rename files constantly. Checked in order of specificity: Meesho's
+// "SKU Size Qty Color Order No." column-header row is a very distinctive
+// structural fingerprint (Amazon and Flipkart invoices use different
+// column sets entirely), so it's checked first. Flipkart is identified by
+// the courier's own name appearing on the page. Amazon has no equally
+// unique single marker in its label pages (which are often just a few
+// short lines of barcode/address text), so it's the fallback rather than
+// something actively matched — safe, since Meesho/Flipkart false-negatives
+// here would show up as obviously wrong output during review, not silently.
+async function detectFilePlatform(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const scanPages = Math.min(pdf.numPages, 5);
+  let combinedText = '';
+  for(let p = 1; p <= scanPages; p++){
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    combinedText += ' ' + tc.items.map(it => it.str).join(' ');
+  }
+  if(/SKU\s+Size\s+Qty\s+Color\s+Order No\./i.test(combinedText)) return 'meesho';
+  if(/Flipkart|E-Kart|Ekart/i.test(combinedText)) return 'flipkart';
+  return 'amazon';
+}
+
+const PLATFORM_PROCESSORS = {
+  amazon:   processPDF,
+  flipkart: processFlipkartPDF,
+  meesho:   processMeeshoPDF
+};
+
+// ── Main file handler ─────────────────────────────────────────────────
+async function handleFiles(files){
+  if(!files.length)return;
+  extractedLabels=[];
+  flipkartFileBytes={};
+  meeshoFileBytes={};
+  document.getElementById('upload-zone').style.display='none';
+  document.getElementById('processing').style.display='block';
+  document.getElementById('results').style.display='none';
+  const pdfs=Array.from(files).filter(f=>f.name.toLowerCase().endsWith('.pdf'));
+  if(!pdfs.length){showToast('Please upload PDF files');resetApp();return;}
+  let all=[];
+  try {
+    for(let fi=0;fi<pdfs.length;fi++){
+      setProgress(Math.round(fi/pdfs.length*30),`Reading file ${fi+1} of ${pdfs.length}...`,pdfs[fi].name);
+      const platform = await detectFilePlatform(pdfs[fi]);
+      const labels = await PLATFORM_PROCESSORS[platform](pdfs[fi], fi, pdfs.length);
+      all=all.concat(labels);
+    }
+  } catch(err) {
+    console.error('Processing error:', err);
+    showToast('Error: ' + err.message);
+    resetApp();
+    return;
+  }
+  // Group by platform (amazon → flipkart → meesho) and pre-sort the Meesho
+  // group (courier → SKU → qty) so what's on screen already matches what
+  // "Download all" will produce for each platform — works the same whether
+  // this batch is single-platform or a mixed Auto-detect batch.
+  extractedLabels = groupLabelsByPlatform(all);
+  renderResults();
+}
+
+// ── PDF processing ────────────────────────────────────────────────────
+async function processPDF(file,fileIdx,totalFiles){
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  const n=pdf.numPages;
+  const labels=[];
+
+  // Balanced-parenthesis extractor: returns the content of the FIRST
+  // "(...)" group starting at/after fromIdx, handling nested parens
+  // correctly. Shared by both the item-1 extraction and the
+  // multi-item (item 2+) extraction below.
+  const extractBalancedParen = (str, fromIdx) => {
+    const idx = str.indexOf('(', fromIdx);
+    if(idx < 0) return null;
+    let depth = 0;
+    for(let k = idx; k < str.length; k++){
+      if(str[k] === '(') depth++;
+      else if(str[k] === ')'){
+        depth--;
+        if(depth === 0) return { value: str.slice(idx+1, k).trim(), endIdx: k+1 };
+      }
+    }
+    return null;
+  };
+
+  // Pass 1: classify pages
+  const types=[], texts=[];
+  for(let p=1;p<=n;p++){
+    const pg=await pdf.getPage(p);
+    const tc=await pg.getTextContent();
+    const text=tc.items.map(i=>i.str).join(' ');
+    const len=text.trim().length;
+    let isLabel;
+    if(len<80){
+      isLabel=true;
+    } else {
+      const isInv=text.includes('Tax Invoice')||text.includes('Bill of Supply')||
+                  text.includes('Authorized Signatory')||text.includes('Payment Transaction')||
+                  (text.includes('HSN')&&text.includes('IGST')&&!text.includes('AWB'));
+      isLabel=!isInv&&(text.includes('Ship To')||text.includes('AWB')||
+              text.includes('PREPAID')||text.includes('COD')||
+              text.includes('Sold on')||text.includes('DELIVERY STATION')||
+              text.includes('Ship From')||text.includes('BOX 1 of'));
+      if(!isLabel&&!isInv)isLabel=true;
+    }
+    types.push(isLabel?'label':'invoice');
+    texts.push({items:tc.items,text});
+  }
+
+  // Pass 2: group label + following invoices
+  let i=0;
+  while(i<n){
+    if(types[i]==='label'){
+      let j=i+1;
+      try {
+      while(j<n&&types[j]==='invoice')j++;
+
+      setProgress(
+        Math.round((fileIdx/totalFiles+(i/n)*(1/totalFiles))*80),
+        'Processing labels...',`Label ${labels.length+1}`
+      );
+
+      let productName='',qty='',orderId='',sku='',_translationFromRaw='',firstAsinItemIdx=-1;
+      const translationParts=[]; // one Translation translation per line item, joined with commas later
+      const labelPage=await pdf.getPage(i+1);
+      const labelLines=texts[i].items.map(it=>it.str.trim()).filter(Boolean);
+
+      // Order ID
+      for(const line of labelLines){
+        const m=line.match(/(\d{3}-\d{7}-\d{7})/);
+        if(m){orderId=m[1];break;}
+      }
+
+      // Product + qty from first invoice page
+      if(j>i+1){
+        const inv=texts[i+1];
+        const items=inv.items;
+        const lines=items.map(it=>it.str.trim()).filter(Boolean);
+
+        // ── Per-item Qty lookup (shared by item 1 and the multi-item loop) ──
+        // Each product row has its own HSN line; the qty column value sits
+        // at roughly the same x-position as the "Qty" header, shortly after
+        // that row's HSN. HSN occurrences line up 1:1 with item rows in
+        // order, so row k's qty search starts at allHsnIdxs[k-1].
+        const qhItem     = items.find(it => /\bQty\b/i.test(it.str));
+        const qx         = qhItem ? qhItem.transform[4] + (qhItem.width||0) * (qhItem.str.search(/\bQty\b/i) / qhItem.str.length) : null;
+        const allHsnIdxs = items.reduce((acc,it,idx) => { if(it.str.includes('HSN:')) acc.push(idx); return acc; }, []);
+        const qtyForHsn  = hsnI => {
+          if(hsnI == null || hsnI < 0 || qx == null) return '';
+          for(let k = hsnI+1; k < Math.min(hsnI+40, items.length); k++){
+            const val = items[k].str.trim();
+            if(/^\d+$/.test(val) && +val >= 1 && +val < 500 && Math.abs(items[k].transform[4]-qx) < 60) return val;
+          }
+          return '';
+        };
+
+        // Find HSN line that's in the product table (format: HSN:XXXXXXXX or HSN:XXXXX)
+        // Skip any HSN mentions in header text by looking for the one with a code after it
+        let hsnIdx = lines.findIndex(l => /HSN[:\s]\d{4,}/.test(l) || l.match(/^HSN:/));
+        if(hsnIdx < 0) hsnIdx = lines.findIndex(l => l.includes('HSN'));
+        // If still not found, use the ASIN line as anchor (line containing B0XXXXXXXXX)
+        if(hsnIdx < 0){
+          hsnIdx = lines.findIndex(l => /B0[A-Z0-9]{8}/.test(l) && l.includes('('));
+        }
+
+        {
+          // ══════════════════════════════════════════════════════
+          // ITEM-LEVEL EXTRACTION (offset-aware + balanced parens)
+          // The ASIN and its SKU may live inside ONE merged PDF text
+          // item that also contains surrounding noise (variant text
+          // BEFORE the asin like "(Clear)", or a stray qty digit).
+          // So we split that item's string at the exact ASIN offset
+          // and only search for the SKU in the text AFTER the ASIN,
+          // using a balanced-parenthesis scan (handles nested SKUs
+          // like "A4Size(10pc)" correctly instead of stopping at the
+          // first inner ")").
+          // ══════════════════════════════════════════════════════
+          const HEADER_WORDS = new Set(['description','sl','sl.','no','no.','unit','price',
+            'discount','qty','net','tax','rate','type','amount','total','hsn']);
+          const isHeaderItem = s => {
+            const words = s.trim().split(/\s+/).filter(Boolean);
+            if(!words.length) return false;
+            return words.every(w => HEADER_WORDS.has(w.toLowerCase().replace(/[.:]+$/,'')));
+          };
+          // Balanced-parenthesis extractor is defined once, above, at
+          // function scope (shared with the multi-item block below).
+
+          // Per-item Qty lookup (qhItem/allHsnIdxs/qtyForHsn) is defined
+          // once, above, at the outer scope — shared with the multi-item
+          // block below.
+
+          // Amazon ASINs always start with "B0" (confirmed across every ASIN
+          // in this seller's catalog). Anchoring to B0 instead of any
+          // letter+digit avoids false-matching other Amazon Business fields
+          // that happen to share the same 10-char shape — e.g. Account #
+          // values like "A2C7EQGJN9KCPD" on Business/B2B invoices, which
+          // was previously being mistaken for the product's ASIN entirely.
+          const asinItemIdx = items.findIndex(it => /B0[A-Z0-9]{8}/.test(it.str));
+          firstAsinItemIdx = asinItemIdx;
+
+          if(asinItemIdx >= 0){
+            const itemStr   = items[asinItemIdx].str;
+            const asinMatch = itemStr.match(/B0[A-Z0-9]{8}/);
+            const asin      = asinMatch[0];
+            const asinOffset= asinMatch.index;
+
+            // Split the merged item's own string around the ASIN —
+            // never let text before the ASIN leak into the SKU search.
+            const beforeAsinInItem = itemStr.slice(0, asinOffset);
+            const afterAsinInItem  = itemStr.slice(asinOffset + asin.length);
+
+            // ── SKU: balanced-paren scan in the text strictly AFTER asin ──
+            let extractedSKU = '', afterSkuTail = '';
+            const fwdItemsStr = items.slice(asinItemIdx+1, Math.min(asinItemIdx+6, items.length))
+                                      .map(it=>it.str).join(' ');
+            const forwardSearchStr = afterAsinInItem + ' ' + fwdItemsStr;
+            const skuParsed = extractBalancedParen(forwardSearchStr, 0);
+            if(skuParsed){
+              extractedSKU  = skuParsed.value;
+              afterSkuTail  = forwardSearchStr.slice(skuParsed.endIdx, skuParsed.endIdx + 80);
+            }
+
+            // ── Title: items before the ASIN item (header-filtered) ──
+            // + the portion of the merged item itself that precedes the ASIN
+            let titleStartIdx = 0;
+            for(let ki = asinItemIdx - 1; ki >= 0; ki--){
+              if(isHeaderItem(items[ki].str)){ titleStartIdx = ki + 1; break; }
+              if(asinItemIdx - ki > 50){ titleStartIdx = ki; break; }
+            }
+            let title = items.slice(titleStartIdx, asinItemIdx).map(it=>it.str).join(' ')
+                        + ' ' + beforeAsinInItem;
+
+            // Remove price/tax noise that may be mixed in
+            title = title
+              .replace(/[₹\u20B9]-?[\d,]+\.?\d*/g, ' ') // rupee amounts
+              .replace(/\b-?\d+(\.\d+)?%\b/g, ' ')       // percentages
+              .replace(/\b(IGST|CGST|SGST)\b/g, ' ')     // tax type labels
+              .replace(/\bHSN[:\s][A-Z0-9]+/g,  ' ')     // HSN codes
+              .replace(/\s+/g, ' ').trim()
+              .replace(/[\|,\s]+$/, '')
+              .replace(/^\d{1,3}\s+/, '');               // strip leading stray qty/serial digit only
+
+            // Append any variant text right after the SKU's closing paren
+            // (e.g. "Multi colour" placed after the ASIN block in the PDF stream)
+            if(afterSkuTail){
+              const vtMatch = afterSkuTail.match(/^[\s\(\)]*([A-Za-z][^₹\u20B9\d]*?)(?=HSN|TOTAL|[₹\u20B9]|$)/);
+              if(vtMatch){
+                const vt = vtMatch[1].replace(/HSN.*/,'').replace(/[|\s,]+$/,'').trim();
+                if(vt.length > 2 && /[a-zA-Z]{2}/.test(vt)) title += ' ' + vt;
+              }
+            }
+
+            const q1 = qtyForHsn(allHsnIdxs[0]);
+            if(q1) qty = q1; // keep the editable Qty field in sync with item 1
+
+            if(extractedSKU){
+              sku = extractedSKU;
+              _translationFromRaw = lookupTranslation(extractedSKU);
+              if(_translationFromRaw) translationParts.push(_translationFromRaw);
+              productName   = '(' + extractedSKU + ') ' + title + (q1 ? ' (Qty: ' + q1 + ')' : '');
+            } else if(title) {
+              productName = title + (q1 ? ' (Qty: ' + q1 + ')' : '');
+            }
+          }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // ADDITIONAL ITEMS (multi-item orders)
+        // Amazon's invoice table can list 2+ products for one order,
+        // but only the FIRST was captured above. Walk forward past
+        // item 1's ASIN and pick up every following row the same way,
+        // appending each one's title to the same label. Each row's
+        // own Sl.No marker ("2", "3", ...) is used to find where that
+        // row's description text actually starts, rather than
+        // accidentally grabbing item 1's trailing price/tax cells.
+        // ══════════════════════════════════════════════════════════
+        if(firstAsinItemIdx >= 0){
+          const asinRegex = /B0[A-Z0-9]{8}/;
+          let prevAsinIdx = firstAsinItemIdx;
+          let rowNum = 2;
+          while(rowNum <= 6){ // sane cap — a label shouldn't need more than this
+            const nextAsinIdx = items.findIndex((it,idx) => idx > prevAsinIdx && asinRegex.test(it.str));
+            if(nextAsinIdx < 0) break;
+
+            let rowStart = prevAsinIdx + 1;
+            for(let ki = nextAsinIdx - 1; ki > prevAsinIdx; ki--){
+              // The Sl.No column always sits at the far-left margin of the
+              // table (~x<150 in practice); price/qty/tax cells sit much
+              // further right, so this guard stops a coincidental "2" in
+              // a price column from being mistaken for the row marker.
+              if(items[ki].str.trim() === String(rowNum) && items[ki].transform[4] < 150){
+                rowStart = ki + 1; break;
+              }
+            }
+
+            const itemStrN  = items[nextAsinIdx].str;
+            const asinMatchN= itemStrN.match(asinRegex);
+            const asinN     = asinMatchN[0];
+            const offsetN   = asinMatchN.index;
+            const beforeAsinN = itemStrN.slice(0, offsetN);
+            const afterAsinN  = itemStrN.slice(offsetN + asinN.length);
+
+            let skuN = '';
+            const fwdStrN = items.slice(nextAsinIdx+1, Math.min(nextAsinIdx+6, items.length))
+                                  .map(it=>it.str).join(' ');
+            const skuParsedN = extractBalancedParen(afterAsinN + ' ' + fwdStrN, 0);
+            if(skuParsedN) skuN = skuParsedN.value;
+
+            let titleN = items.slice(rowStart, nextAsinIdx).map(it=>it.str).join(' ') + ' ' + beforeAsinN;
+            titleN = titleN
+              .replace(/[₹\u20B9]-?[\d,]+\.?\d*/g, ' ')
+              .replace(/\b-?\d+(\.\d+)?%\b/g, ' ')
+              .replace(/\b(IGST|CGST|SGST)\b/g, ' ')
+              .replace(/\bHSN[:\s][A-Z0-9]+/g,  ' ')
+              .replace(/\s+/g, ' ').trim()
+              .replace(/[\|,\s]+$/, '')
+              .replace(/^\d{1,3}\s+/, '');
+
+            const qN = qtyForHsn(allHsnIdxs[rowNum-1]);
+            if(titleN){
+              const itemNStr = (skuN ? '(' + skuN + ') ' : '') + titleN + (qN ? ' (Qty: ' + qN + ')' : '');
+              productName = productName ? productName + '\n' + itemNStr : itemNStr;
+            }
+            if(skuN){
+              const translationN = lookupTranslation(skuN);
+              if(translationN) translationParts.push(translationN);
+            }
+
+            prevAsinIdx = nextAsinIdx;
+            rowNum++;
+          }
+        }
+
+        // (item 1's qty is already captured inline above via qtyForHsn(allHsnIdxs[0]))
+        // Fallback: rupee sandwich — qty sits between price amounts: ₹XX.XX  QTY  ₹XX.XX
+        if(!qty&&hsnIdx>=0){
+          const raw=lines.slice(hsnIdx+1,hsnIdx+25).join(' ');
+          const m=raw.match(/(?:[₹\u20B9][\d.,]+\s+)?(?:-[₹\u20B9][\d.,]+\s+)?(\d{1,3})\s+[₹\u20B9][\d.,]/);
+          if(m&&+m[1]>=1&&+m[1]<500)qty=m[1];
+        }
+        // Fallback 2: first standalone int after last HSN line in text lines
+        if(!qty&&hsnIdx>=0){
+          for(let k=hsnIdx+1;k<Math.min(hsnIdx+15,lines.length);k++){
+            const v=lines[k].trim();
+            if(v.match(/^\d+$/)&&+v>=1&&+v<500){qty=v;break;}
+          }
+        }
+      }
+
+      // ── Final fallbacks — run even if HSN was not found ──────────────
+      // i = label page index (0-based), j = first page after all invoices
+      // Invoice pages are i+1 ... j-1
+      const firstInvIdx = (j > i+1) ? (i+1) : -1;
+
+      if(!productName && firstInvIdx >= 0){
+        const invLines = texts[firstInvIdx].items.map(it=>it.str.trim()).filter(Boolean);
+
+        // ── Step 1: Extract SKU from raw invLines by walking backward from HSN ──
+        // Pattern in PDF: "B0XXXXXXXX" "(", "SKU-CODE", ")" ... "HSN:XXXX"
+        // Each of those may be a SEPARATE text item, so we search invLines directly
+        let fallbackSKU = '';
+        const invHsnIdx = invLines.findIndex(l => /HSN[:\s]\d{4,}/.test(l) || l.startsWith('HSN:'));
+        if(invHsnIdx > 0){
+          // Walk backward from HSN: skip ")", "(", "|", ASIN codes, price items
+          // The FIRST non-noise item we find is the SKU
+          for(let ki = invHsnIdx - 1; ki >= Math.max(0, invHsnIdx - 8); ki--){
+            const v = invLines[ki].trim();
+            if(!v || v === ')' || v === '(' || v === '|') continue;
+            if(/^[₹\u20B9]/.test(v) || /^-?[\d,]+\.?\d*$/.test(v)) continue; // price
+            if(/^B0[A-Z0-9]{8}$/.test(v)) continue; // ASIN — skip
+            if(/\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4}/.test(v)) break; // date = gone too far
+            // This should be the SKU code (e.g. "28-0RHO-VGZE" or "hempack1" or "CopySize(10pc)")
+            if(v.length >= 3 && v.length <= 30 && /[A-Za-z0-9]/.test(v)){
+              // Make sure it's not a description word (SKUs have digits/dashes or are all-lowercase)
+              const looksSKU = v.includes('-') || /^[a-z]/.test(v) || /\d/.test(v);
+              if(looksSKU){ fallbackSKU = v; break; }
+            }
+          }
+        }
+        if(fallbackSKU && !_translationFromRaw)
+          _translationFromRaw = lookupTranslation(fallbackSKU);
+        if(fallbackSKU && !sku) sku = fallbackSKU;
+
+        // ── Step 2: Build filtered description lines for title ──
+        const skipWords = ['Invoice','Seller','Address','GSTIN','PAN','Place of',
+                           'State/UT','Whether','Amount in Words','Authorized','Triplicate',
+                           'Customers','Please note','Page ','For PARAS','CT-','Order Number',
+                           'Order Date','Billing','Shipping','Sold By','ASSPL','ARIPL',
+                           'Tax Invoice','Bill of Supply','Invoice Number','Invoice Date',
+                           'Invoice Details','Registered','FSSAI','E. & O.E',
+                           'IGST','CGST','SGST','NIL','Nil',
+                           'Description','Unit Price','Discount','Net Amount','Tax Rate',
+                           'Tax Type','Tax Amount','Total Amount','Sl.','Sl. No'];
+        const descLines = invLines.filter(l =>
+          l.length > 4 &&
+          !l.match(/^[₹\u20B9\d\-\.,\%\|\(\)\/]+$/) &&      // skip pure price/symbol lines
+          !l.match(/^\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4}$/) &&  // skip dates
+          !l.match(/^[A-Z0-9]{10}$/) &&                       // skip standalone ASINs
+          !l.match(/^\d+(\.\d+)?%$/) &&                       // skip percentages like 5%
+          !skipWords.some(w => l === w || l.startsWith(w+' ') || l.includes(w))
+        );
+        const realDescLines = descLines.filter(l => l.match(/[a-zA-Z]{3,}/));
+        if(realDescLines.length > 0){
+          const fallbackRaw = realDescLines.slice(0,8).join(' ').replace(/\s+/g,' ').trim();
+          // Strip ASIN and bare SKU suffix from title
+          let joined = fallbackRaw
+            .replace(/\s*\|?\s*B0[A-Z0-9]{8}\s*[\(\[]?[^)\]]*[\)\]]?\s*$/, '')
+            .replace(/\s*\(?\s*[A-Z0-9]{2,4}-[A-Z0-9]{2,6}-[A-Z0-9]{2,6}\s*\)?\s*$/, '')
+            .replace(/[,\s]+$/, '')
+            .trim();
+          if(!_translationFromRaw) _translationFromRaw = lookupTranslation(fallbackRaw);
+          productName = fallbackSKU ? '(' + fallbackSKU + ') ' + joined : joined;
+        }
+      }
+
+      // If qty still empty
+      if(!qty && firstInvIdx >= 0){
+        const invText = texts[firstInvIdx].text;
+        const tqMatch = invText.match(/TOTAL\s+QTY[:\s]+(\d+)/i);
+        if(tqMatch) qty = tqMatch[1];
+      }
+
+      // Translation lookup — use raw title result captured before pipe-strip
+      const translation=translationParts.filter(Boolean).join(', ')||_translationFromRaw||lookupTranslation(productName);
+
+      // Render label at reduced scale to keep file size small
+      const viewport=labelPage.getViewport({scale:1.5});
+      const canvas=document.createElement('canvas');
+      canvas.width=viewport.width;canvas.height=viewport.height;
+      await labelPage.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+
+      labels.push({canvas,productName,qty,translation,orderId,sku,fileName:file.name,platform:'amazon'});
+      } catch(labelErr) {
+        console.warn('Skipping label due to error:', labelErr.message);
+      }
+      i=j;
+    } else {
+      i++;
+    }
+  }
+  return labels;
+}
+
+// ── Render results ────────────────────────────────────────────────────
+function renderResults(){
+  document.getElementById('processing').style.display='none';
+  document.getElementById('results').style.display='block';
+  document.getElementById('label-count').textContent=extractedLabels.length;
+  document.getElementById('res-title').textContent=
+    `${extractedLabels.length} Shipping Label${extractedLabels.length!==1?'s':''} Found`;
+
+  const grid=document.getElementById('labels-grid');
+  grid.innerHTML='';
+
+  extractedLabels.forEach((label,idx)=>{
+    const card=document.createElement('div');
+    card.className='label-card selected';
+    card.dataset.idx=idx;
+
+    const shortProduct=(label.productName||'Shipping Label').trim();
+    const safeTranslation=(label.translation||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const PLATFORM_LABELS = {amazon:'Amazon', flipkart:'Flipkart', meesho:'Meesho'};
+    const PLATFORM_COLORS = {amazon:'#FF9900', flipkart:'#2874F0', meesho:'#9F2089'};
+    const platformBadge = label.platform
+      ? `<span class="courier-badge" style="background:${PLATFORM_COLORS[label.platform]||'#666'}">${PLATFORM_LABELS[label.platform]||label.platform}</span>`
+      : '';
+    const courierBadge = label.courier
+      ? `<span class="courier-badge">${label.courier.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`
+      : '';
+
+    card.innerHTML=`
+      <div class="chk" onclick="event.stopPropagation();toggleCard(this.closest('.label-card'))">
+        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+      </div>
+      <div class="canvas-wrap" onclick="toggleCard(this.closest('.label-card'))" id="cw-${idx}"></div>
+      <div class="info">
+        <div class="order">${platformBadge}${courierBadge}${label.orderId||'Order #'+(idx+1)}</div>
+        <div class="edit-row">
+          <textarea id="pname-${idx}"
+            onclick="event.stopPropagation()"
+            oninput="extractedLabels[${idx}].productName=this.value;this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+            title="Click to edit product name">${shortProduct.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+          <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div class="meta-row">
+          ${label.translation
+            ? `<span class="translation-text" id="translation-${idx}">${safeTranslation}</span>`
+            : ``
+          }
+          <div class="qty-wrap">
+            <span class="qty-label">Qty:</span>
+            <input type="text" class="qty-input" id="qty-${idx}" value="${label.qty||''}"
+              onclick="event.stopPropagation()"
+              onchange="extractedLabels[${idx}].qty=this.value"
+              title="Click to edit quantity">
+          </div>
+        </div>
+      </div>`;
+
+    grid.appendChild(card);
+    card.querySelector(`#cw-${idx}`).appendChild(label.canvas);
+    // Auto-size textarea to full content height
+    const ta=card.querySelector(`#pname-${idx}`);
+    if(ta){ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';}
+  });
+
+  setProgress(100);
+  const translationCount=extractedLabels.filter(l=>l.translation).length;
+  showToast(`✓ ${extractedLabels.length} labels · ${translationCount} with Translation`);
+}
+
+// ── Search / filter ───────────────────────────────────────────────────
+function filterLabels(){
+  const q=document.getElementById('search-input').value.toLowerCase().trim();
+  document.querySelectorAll('.label-card').forEach(card=>{
+    if(!q){card.classList.remove('hidden');return;}
+    const idx=parseInt(card.dataset.idx);
+    const l=extractedLabels[idx];
+    const hay=(l.orderId+' '+l.productName+' '+l.translation+' '+(l.courier||'')+' '+(l.platform||'')).toLowerCase();
+    card.classList.toggle('hidden',!hay.includes(q));
+  });
+}
+
+// ── Selection ─────────────────────────────────────────────────────────
+function toggleCard(card){card.classList.toggle('selected');updateSelAll()}
+function toggleAll(checked){
+  document.querySelectorAll('.label-card:not(.hidden)').forEach(c=>{
+    if(checked)c.classList.add('selected');else c.classList.remove('selected');
+  });
+}
+function updateSelAll(){
+  const vis=[...document.querySelectorAll('.label-card:not(.hidden)')];
+  const sel=vis.filter(c=>c.classList.contains('selected'));
+  document.getElementById('sel-all').checked=vis.length>0&&vis.length===sel.length;
+}
+function getSelected(){
+  return [...document.querySelectorAll('.label-card.selected:not(.hidden)')]
+    .map(c=>extractedLabels[parseInt(c.dataset.idx)]);
+}
+
+// ── Download ──────────────────────────────────────────────────────────
+// Splits a label set by platform and runs each group through its own
+// generator. A no-op split for a single-platform batch (exactly one group
+// ends up non-empty); for a mixed Auto-detect batch it produces one
+// download per platform present, since Amazon/Flipkart/Meesho outputs are
+// fundamentally different file types (raster-composited PDF, vector crop,
+// and vector page-copy respectively) and can't be merged into one file.
+async function downloadGroupedByPlatform(labels, filenames, allowSingleJpg){
+  if(allowSingleJpg && labels.length===1 && labels[0].platform==='amazon'){
+    // Preserves the existing single-label shortcut — only for a lone
+    // Amazon label, since Flipkart/Meesho always need the real vector
+    // page (the grid canvas for those is a raster preview only).
+    const a=document.createElement('a');
+    a.href=labels[0].canvas.toDataURL('image/jpeg',0.85);
+    a.download=`label-${labels[0].orderId||'1'}.jpg`;
+    a.click();showToast('Downloaded as JPG');
+    return;
+  }
+  const groups = {amazon:[], flipkart:[], meesho:[]};
+  labels.forEach(l => { (groups[l.platform] || (groups[l.platform] = [])).push(l); });
+  if(groups.flipkart.length) await generateFlipkartPDF(groups.flipkart, filenames.flipkart);
+  if(groups.meesho.length)   await generateMeeshoPDF(groups.meesho, filenames.meesho);
+  if(groups.amazon.length)   await generatePDF(groups.amazon, filenames.amazon);
+}
+
+async function downloadAll(){
+  // Deliberately bypasses search filter + manual selection — "all" should
+  // mean all, even if the person is mid-search or deselected a few cards.
+  // Use "Download Selected" for a filtered/selected subset.
+  const labels=extractedLabels;
+  if(!labels.length){showToast('No labels to download');return;}
+  await downloadGroupedByPlatform(labels, {
+    amazon:'amazon-labels.pdf', flipkart:'flipkart-labels.pdf', meesho:'meesho-labels-sorted.pdf'
+  }, false);
+}
+async function downloadSelected(){
+  const labels=getSelected();
+  if(!labels.length){showToast('Select at least one label');return;}
+  await downloadGroupedByPlatform(labels, {
+    amazon:'selected-labels.pdf', flipkart:'flipkart-labels.pdf', meesho:'meesho-labels-sorted.pdf'
+  }, true);
+}
+
+// ── Flipkart PDF generator — true vector crop via pdf-lib ─────────────
+// This does NOT touch a canvas. It literally cuts the label region out
+// of the ORIGINAL PDF's vector content (text + barcode stay sharp, file
+// stays tiny) — the same technique a native PDF-cropping tool uses.
+// Completely independent of Amazon's jsPDF/raster pipeline below.
+// ── Shared: add a Translation + Qty footer strip to a vector-embedded page ───
+// pdf-lib's built-in fonts don't support Devanagari, so — just like the
+// Amazon pipeline already does — the text is rendered to an offscreen
+// canvas (the browser renders Devanagari natively) and embedded as a PNG.
+// If there's nothing to show, the page is added unchanged (no footer,
+// no size change) so existing output for sheets with no SKU match is
+// completely unaffected.
+// ── Shared: render the translation strip as a PNG, sized to fit the text.
+// pdf-lib's built-in fonts don't support Devanagari or other Indic scripts,
+// so — just like the Amazon pipeline already does — the text is rendered
+// to an offscreen canvas (the browser renders any script natively) and
+// embedded as a PNG. Returns null if there's nothing to draw.
+async function makeTranslationStrip(outDoc, widthPt, translation, qty){
+  if(!translation && !qty) return null;
+
+  const scale = 3; // render at higher resolution for crisp print output
+  const marginPt = 8;  // left/right margin
+  const padPt = 5;     // vertical padding above/below the text
+  const dividerPt = 0.5;
+  const qtyGapPt = 10;  // gap between translation and qty
+
+  const measureCtx = document.createElement('canvas').getContext('2d');
+  let fontPx = 13*scale;
+  measureCtx.font = `bold ${fontPx}px sans-serif`;
+
+  const qtyLabel = qty ? `Qty: ${qty}` : '';
+  const reserveForQty = () => qtyLabel ? measureCtx.measureText(qtyLabel).width + qtyGapPt*scale : 0;
+
+  const maxW = (widthPt - marginPt*2) * scale;
+  while(translation && (measureCtx.measureText(translation).width + reserveForQty()) > maxW && fontPx > 7*scale){
+    fontPx -= scale;
+    measureCtx.font = `bold ${fontPx}px sans-serif`;
+  }
+
+  const textPt = fontPx/scale;
+  const stripPt = textPt*1.3 + padPt*2 + dividerPt;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = widthPt*scale;
+  canvas.height = stripPt*scale;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, dividerPt*scale); // thin top divider only — no full box
+  ctx.font = `bold ${fontPx}px sans-serif`;
+  ctx.textBaseline = 'middle';
+
+  let qtyW = 0;
+  if(qtyLabel){
+    qtyW = ctx.measureText(qtyLabel).width;
+    ctx.fillText(qtyLabel, canvas.width - qtyW - marginPt*scale, canvas.height/2 + dividerPt*scale);
+  }
+  if(translation){
+    ctx.fillText(translation, marginPt*scale, canvas.height/2 + dividerPt*scale);
+  }
+
+  const pngBytes = await fetch(canvas.toDataURL('image/png')).then(r=>r.arrayBuffer());
+  const pngImage = await outDoc.embedPng(pngBytes);
+  return {pngImage, stripPt};
+}
+
+// Flipkart: append the strip below the (already cropped) label image.
+async function addInfoFooter(outDoc, embedded, outWidthPt, baseHeightPt, translation, qty){
+  const strip = await makeTranslationStrip(outDoc, outWidthPt, translation, qty);
+  if(!strip){
+    const page = outDoc.addPage([outWidthPt, baseHeightPt]);
+    page.drawPage(embedded, {x:0, y:0, width:outWidthPt, height:baseHeightPt});
+    return;
+  }
+  const page = outDoc.addPage([outWidthPt, baseHeightPt + strip.stripPt]);
+  page.drawPage(embedded, {x:0, y: strip.stripPt, width: outWidthPt, height: baseHeightPt});
+  page.drawImage(strip.pngImage, {x:0, y:0, width: outWidthPt, height: strip.stripPt});
+}
+
+
+async function generateFlipkartPDF(labels, filename){
+  showToast('Generating Flipkart PDF...');
+  const { PDFDocument } = PDFLib;
+  const outDoc = await PDFDocument.create();
+  const srcDocCache = {};
+
+  const OUT_WIDTH_PT = 288; // 101.6mm (4in) thermal label width
+
+  for(const lb of labels){
+    if(!srcDocCache[lb.fileIdx]){
+      srcDocCache[lb.fileIdx] = await PDFDocument.load(flipkartFileBytes[lb.fileIdx]);
+    }
+    const srcDoc   = srcDocCache[lb.fileIdx];
+    const srcPage  = srcDoc.getPage(lb.pageIndex);
+    const embedded = await outDoc.embedPage(srcPage, lb.cropBox);
+
+    const cropW = lb.cropBox.right - lb.cropBox.left;
+    const cropH = lb.cropBox.top - lb.cropBox.bottom;
+    const outHeight = OUT_WIDTH_PT * (cropH / cropW);
+
+    await addInfoFooter(outDoc, embedded, OUT_WIDTH_PT, outHeight, lb.translation, lb.qty);
+  }
+
+  const pdfBytes = await outDoc.save();
+  const blob = new Blob([pdfBytes], {type:'application/pdf'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Downloaded!');
+}
+
+async function generatePDF(labels,filename){
+  showToast('Generating PDF...');
+  const {jsPDF}=window.jspdf;
+  const pageW=101.6,pageH=152.4,border=3;
+  const usableW=pageW-border*2,usableH=pageH-border*2;
+  const doc=new jsPDF({unit:'mm',format:[pageW,pageH],orientation:'portrait'});
+
+  for(let i=0;i<labels.length;i++){
+    const lb=labels[i];
+    if(i>0)doc.addPage([pageW,pageH]);
+
+    // Use JPEG at 85% quality — much smaller than PNG
+    const imgData=lb.canvas.toDataURL('image/jpeg',0.85);
+
+    const pad=2.5; // padding inside box
+
+    // ── Pre-calculate exact info box height from content ──
+    // Must set font BEFORE splitTextToSize so measurement is accurate on every label.
+    // For multi-item orders the combined title can be long, so we shrink the
+    // font step by step until it wraps to a reasonable number of lines —
+    // single-item labels keep the original 7pt since they already fit.
+    doc.setFont('helvetica','bold');
+    const hasInfo=!!(lb.productName||lb.qty||lb.translation) && lb.platform !== 'flipkart';
+    let titleLines=[], fontSize=7;
+    const BASE_FONT=7, MIN_FONT=5, MAX_LINES=9;
+    if(lb.productName){
+      for(fontSize=BASE_FONT; fontSize>=MIN_FONT; fontSize-=0.5){
+        doc.setFontSize(fontSize);
+        const wrapped=doc.splitTextToSize(lb.productName,usableW-3);
+        if(wrapped.length<=MAX_LINES || fontSize<=MIN_FONT){
+          titleLines=wrapped.slice(0,MAX_LINES);
+          break;
+        }
+      }
+    }
+    const lineH = fontSize/BASE_FONT*3.5; // scale line height with the chosen font size
+    const titleH = titleLines.length>0 ? titleLines.length*lineH : 0;
+    const hasBottomRow = !!lb.translation || !!lb.qty;
+    const bottomRowH = hasBottomRow ? lineH+1 : 0;
+    const infoH = hasInfo ? titleH + bottomRowH + pad*2 : 0;
+
+    // Label image placement — aspect ratio preserved, fits within available space
+    const aspect=lb.canvas.height/lb.canvas.width;
+    const availH=usableH-infoH-(infoH>0?2:0);
+    let imgW,imgH;
+    if(availH/usableW>aspect){imgW=usableW;imgH=imgW*aspect;}
+    else{imgH=availH;imgW=imgH/aspect;}
+    const imgX=border+(usableW-imgW)/2;
+    doc.addImage(imgData,'JPEG',imgX,border,imgW,imgH);
+
+    if(hasInfo){
+      const blockY=border+imgH+2;
+      doc.setFillColor(255,255,255);
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(0.2);
+      doc.rect(border,blockY,usableW,infoH,'FD');
+
+      doc.setTextColor(0,0,0);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(fontSize);
+
+      if(titleLines.length>0){
+        doc.text(titleLines,border+1.5,blockY+pad+lineH*0.85);
+      }
+      const row2Y=blockY+pad+(titleLines.length>0?titleLines.length*lineH+1:0)+lineH*0.85;
+
+      // Measure Qty text FIRST so the Translation image can be clamped to leave
+      // room for it — otherwise a long comma-joined Translation string (multi-item
+      // orders) can render wide enough to run into/under the Qty text.
+      let qtyText='', qtyTextWidth=0;
+      if(lb.qty){
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(fontSize);
+        qtyText='Qty: '+lb.qty;
+        qtyTextWidth=doc.getTextWidth(qtyText);
+      }
+      const qtyReserveMm = qtyText ? qtyTextWidth+3 : 0; // +3mm gap before Qty
+
+      if(lb.translation){
+        // Draw Translation via offscreen canvas (jsPDF can't render Devanagari natively).
+        // Canvas is sized to the ACTUAL text width (not a fixed box) so short
+        // translations don't leave dead space and long comma-joined ones
+        // don't get clipped.
+        const measureCtx=document.createElement('canvas').getContext('2d');
+        measureCtx.font='bold 24px sans-serif';
+        const textPx=measureCtx.measureText(lb.translation).width;
+        const padPx=6;
+        const hCanvas=document.createElement('canvas');
+        hCanvas.width=Math.ceil(textPx)+padPx*2; hCanvas.height=38;
+        const hCtx=hCanvas.getContext('2d');
+        hCtx.fillStyle='#fff';hCtx.fillRect(0,0,hCanvas.width,hCanvas.height);
+        hCtx.fillStyle='#000';
+        hCtx.font='bold 24px sans-serif';
+        hCtx.fillText(lb.translation,padPx,28);
+        const hImg=hCanvas.toDataURL('image/png');
+        const MM_PER_PX=42/520; // calibrated against the original fixed-box rendering
+        const translationWmm=Math.max(0, Math.min(hCanvas.width*MM_PER_PX, usableW-3-qtyReserveMm));
+        if(translationWmm>0) doc.addImage(hImg,'PNG',border+1.5,row2Y-lineH+0.3,translationWmm,lineH+0.5);
+      }
+      if(qtyText){
+        // Right-aligned within the box, on the same row as Translation.
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(fontSize);
+        const qtyX=border+usableW-1.5-qtyTextWidth;
+        doc.text(qtyText,qtyX,row2Y);
+      }
+    }
+  }
+  doc.save(filename);
+  showToast(`✓ Saved ${filename}`);
+}
+
+// ── Flipkart PDF processor — independent of Amazon, text-position based ─
+// Flipkart's combined label+invoice PDF always places the shipping label
+// at the top of the page, ending with "Not for resale." as its last
+// line, followed by a dashed divider and the tax invoice below. Rather
+// than guessing a fixed crop percentage (which breaks the moment content
+// shifts by even a few points), we read the REAL text positions on the
+// page and cut exactly where the label content ends.
+//
+// This function only figures out WHERE to cut (cropBox, in PDF point
+// coordinates) and builds a small on-screen preview thumbnail. The
+// actual crop of the final PDF happens later in generateFlipkartPDF,
+// straight from the original vector PDF — never from this thumbnail.
+let flipkartFileBytes = {}; // fileIdx -> raw PDF bytes, needed later for the vector crop
+
+async function processFlipkartPDF(file, fileIdx, totalFiles){
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  flipkartFileBytes[fileIdx] = bytes;
+
+  const pdf = await pdfjsLib.getDocument({data: bytes.slice()}).promise;
+  const n = pdf.numPages;
+  const labels = [];
+
+  for(let p = 1; p <= n; p++){
+    const page = await pdf.getPage(p);
+    const textContent = await page.getTextContent();
+    const pageHeight = page.getViewport({scale:1}).height;
+    const pageWidth  = page.getViewport({scale:1}).width;
+
+    // Convert every text item to page-top-down coordinates once.
+    // pdf.js sometimes emits whitespace-only "items" to represent gaps
+    // between text runs — these carry no visible ink but can report an
+    // inflated width, which would wrongly stretch our crop bounds, so
+    // they're dropped here.
+    const items = textContent.items
+      .filter(it => it.str.trim() !== '')
+      .map(it => ({
+        str: it.str,
+        x: it.transform[4],
+        topDown: pageHeight - it.transform[5],
+        width: it.width
+      }));
+    const fullText = items.map(i => i.str).join(' ');
+    if(!/Flipkart|E-Kart|Ekart/i.test(fullText)) continue;
+
+    setProgress(
+      Math.round((fileIdx/totalFiles + (p/n)*(1/totalFiles))*80),
+      'Processing Flipkart labels...', `Page ${p} of ${n}`
+    );
+
+    // "Not for resale." is always the label's last printed line.
+    // NOTE: pdf.js often returns this as ONE combined item ("Not for
+    // resale."), not split into separate words — match by substring,
+    // not exact equality, so this works regardless of how it's tokenized.
+    const marker = items.find(i => /resale/i.test(i.str));
+    if(!marker) continue; // can't safely locate the label boundary — skip
+
+    const bottomCut = marker.topDown + 10; // small padding past the last line
+    const regionItems = items.filter(i => i.topDown <= bottomCut);
+    if(!regionItems.length) continue;
+
+    const topCut   = Math.min(...regionItems.map(i => i.topDown)) - 12;
+    const leftCut  = Math.max(0, Math.min(...regionItems.map(i => i.x)) - 10);
+    const rightCut = Math.min(pageWidth, Math.max(...regionItems.map(i => i.x + i.width)) + 20);
+
+    // cropBox is in real PDF coordinates (origin bottom-left) — this is
+    // exactly what pdf-lib's embedPage() expects for the final vector crop
+    const cropBox = {
+      left:   leftCut,
+      right:  rightCut,
+      bottom: pageHeight - bottomCut,
+      top:    pageHeight - topCut
+    };
+
+    const orderMatch = fullText.match(/OD\d{10,}/);
+    const awbMatch    = fullText.match(/AWB No\.\s*([A-Z0-9]+)/);
+
+    // ── SKU / Qty — read directly off the label's own "SKU ID |
+    // Description ... QTY" row (confirmed present on the label itself,
+    // not just the invoice below it, via real-sample inspection). Item-1
+    // only, same convention as the Amazon pipeline's qty field — good
+    // enough for the common single-item-per-label case.
+    //
+    // Row shape after the header: [serial#] [SKU] [description, starts
+    // with "|"] ... [qty]. Rather than trust fixed item offsets (fragile
+    // if a description ever splits across two text items), the qty value
+    // is found by x-position match against the "QTY" column header —
+    // the same anchoring technique already used in the Amazon pipeline.
+    let sku = '', qty = '';
+    const skuHdrIdx = items.findIndex((it, idx) =>
+      /SKU ID/i.test(it.str) && items[idx+1] && /^QTY$/i.test(items[idx+1].str.trim())
+    );
+    if(skuHdrIdx >= 0){
+      const qtyX = items[skuHdrIdx+1].x;
+      let skuFound = false;
+      for(let k = skuHdrIdx+2; k < Math.min(skuHdrIdx+15, items.length); k++){
+        const v = items[k].str.trim();
+        if(!v) continue;
+        if(!skuFound && !/^\d+$/.test(v) && !v.startsWith('|')){
+          sku = v; skuFound = true; continue; // first non-numeric, non-description item = SKU
+        }
+        if(skuFound && /^\d+$/.test(v) && Math.abs(items[k].x - qtyX) < 15){
+          qty = v; break; // numeric item aligned under the QTY header = qty
+        }
+      }
+    }
+
+    // Raster thumbnail for the on-screen preview card ONLY
+    const thumbScale = 1.6;
+    const thumbVp = page.getViewport({scale: thumbScale});
+    const fullCanvas = document.createElement('canvas');
+    fullCanvas.width  = thumbVp.width;
+    fullCanvas.height = thumbVp.height;
+    await page.render({canvasContext: fullCanvas.getContext('2d'), viewport: thumbVp}).promise;
+
+    const sx = cropBox.left * thumbScale;
+    const sw = (cropBox.right - cropBox.left) * thumbScale;
+    const sy = topCut * thumbScale;
+    const sh = (bottomCut - topCut) * thumbScale;
+    const thumbCanvas = document.createElement('canvas');
+    thumbCanvas.width  = sw;
+    thumbCanvas.height = sh;
+    thumbCanvas.getContext('2d').drawImage(fullCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+
+    labels.push({
+      canvas: thumbCanvas,          // preview only
+      productName: sku, qty, translation: lookupTranslation(sku),
+      orderId: orderMatch ? orderMatch[0] : (awbMatch ? awbMatch[1] : ''),
+      sku,
+      fileName: file.name,
+      platform: 'flipkart',
+      pageIndex: p - 1,             // 0-based, for pdf-lib
+      fileIdx,                      // which uploaded file this page came from
+      cropBox                       // used for the real vector crop on download
+    });
+  }
+
+  return labels;
+}
+
+// ── Meesho processor — no cropping, just reading + reordering ──────────
+// Meesho already ships finished, print-ready shipping labels; each PDF
+// page here is one complete label (courier block + barcode + a Product
+// Details table with SKU/Qty already printed + the tax invoice below).
+// The only work needed is figuring out which courier, SKU, and qty each
+// page belongs to, then re-ordering whole pages — never touching the
+// page content itself, so the output is byte-identical per-label to
+// what Meesho generated.
+//
+// Text layout is very consistent across couriers (verified against a
+// real sample): the "Prepaid: ..." / "COD: ..." banner is immediately
+// followed by the courier name as its own text item, and the SKU/Qty/
+// Order No. values always follow directly after the "SKU Size Qty Color
+// Order No." column-header row in the Product Details block. Filtering
+// out whitespace-only items first makes both patterns trivial to match
+// positionally instead of needing fragile regexes over the whole page.
+let meeshoFileBytes = {}; // fileIdx -> raw PDF bytes, needed later for the page copy
+
+const MEESHO_COURIER_ALIASES = {
+  'delhivery':'Delhivery','shadowfax':'Shadowfax','xpressbees':'Xpressbees',
+  'xpress bees':'Xpressbees','valmo':'Valmo','ecom express':'Ecom Express',
+  'ekart':'Ekart','dtdc':'DTDC'
+};
+
+async function processMeeshoPDF(file, fileIdx, totalFiles){
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  meeshoFileBytes[fileIdx] = bytes;
+
+  const pdf = await pdfjsLib.getDocument({data: bytes.slice()}).promise;
+  const n = pdf.numPages;
+  const labels = [];
+
+  for(let p = 1; p <= n; p++){
+    const page = await pdf.getPage(p);
+    const textContent = await page.getTextContent();
+    const rawItems = textContent.items.map(it => it.str);
+    const items = rawItems.map(s => s.trim()).filter(Boolean); // whitespace-only PDF items dropped
+
+    setProgress(
+      Math.round((fileIdx/totalFiles + (p/n)*(1/totalFiles))*80),
+      'Reading Meesho labels...', `Page ${p} of ${n}`
+    );
+
+    // ── Courier: the text item right after the Prepaid/COD banner ──
+    const bannerIdx = items.findIndex(s => /^(Prepaid|COD)\s*:/i.test(s));
+    let courierRaw = '';
+    if(bannerIdx >= 0 && bannerIdx+1 < items.length) courierRaw = items[bannerIdx+1];
+    const courier = MEESHO_COURIER_ALIASES[courierRaw.toLowerCase()] || courierRaw || 'Unknown';
+
+    // ── SKU / Qty / Order No.: the row right after the column headers ──
+    const hdrIdx = items.findIndex((s, i) =>
+      s === 'SKU' && items[i+1] === 'Size' && items[i+2] === 'Qty' &&
+      items[i+3] === 'Color' && items[i+4] === 'Order No.'
+    );
+    let sku = '', qty = '', orderNo = '';
+    if(hdrIdx >= 0){
+      sku     = items[hdrIdx+5] || '';
+      qty     = items[hdrIdx+7] || '';
+      orderNo = items[hdrIdx+9] || '';
+    }
+    if(!sku && !orderNo) continue; // page didn't match the expected label layout — skip rather than misfile it
+
+    // Raster thumbnail for the on-screen preview card ONLY — the real
+    // output is a vector copy of this exact page, done in generateMeeshoPDF.
+    const thumbScale = 0.55;
+    const viewport = page.getViewport({scale: thumbScale});
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width; canvas.height = viewport.height;
+    await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+
+    labels.push({
+      canvas,
+      productName: sku, qty, translation: lookupTranslation(sku),
+      orderId: orderNo,
+      courier,
+      sku,
+      fileName: file.name,
+      platform: 'meesho',
+      pageIndex: p - 1,   // 0-based, for pdf-lib
+      fileIdx
+    });
+  }
+
+  return labels;
+}
+
+function sortMeeshoLabels(labels){
+  return [...labels].sort((a,b) => {
+    const c = (a.courier||'').localeCompare(b.courier||'');
+    if(c) return c;
+    const s = (a.sku||'').localeCompare(b.sku||'');
+    if(s) return s;
+    return (parseInt(a.qty,10)||0) - (parseInt(b.qty,10)||0);
+  });
+}
+
+// Groups a label array by platform (amazon → flipkart → meesho), applying
+// the Meesho sort within its group. A no-op reordering for single-platform
+// batches; for a mixed Auto-detect batch it's what keeps each platform's
+// labels contiguous on screen and in "download all" output.
+//
+// SKU→qty sort is applied within the Amazon and Flipkart groups (helps the
+// packing team pack the same SKU back-to-back). Flipkart's SKU/qty come
+// from the "SKU ID | Description ... QTY" row printed directly on the
+// label itself (confirmed via real-sample inspection — see
+// processFlipkartPDF); Amazon's come from its existing ASIN-anchored
+// extraction.
+function sortBySkuQty(labels){
+  return [...labels].sort((a,b) => {
+    const s = (a.sku||'').localeCompare(b.sku||'');
+    if(s) return s;
+    return (parseInt(a.qty,10)||0) - (parseInt(b.qty,10)||0);
+  });
+}
+function groupLabelsByPlatform(labels){
+  const groups = {amazon:[], flipkart:[], meesho:[]};
+  labels.forEach(l => { (groups[l.platform] || (groups[l.platform] = [])).push(l); });
+  return [...sortBySkuQty(groups.amazon), ...sortBySkuQty(groups.flipkart), ...sortMeeshoLabels(groups.meesho)];
+}
+
+// ── Meesho PDF generator — direct page copy via pdf-lib ────────────────
+// No cropping, no re-rendering: pdf-lib's copyPages duplicates each
+// original page exactly (text, barcode, everything) into the output
+// doc, in courier → SKU → qty order. This is why Meesho needs far less
+// code than Amazon/Flipkart — there's no content to reconstruct.
+async function generateMeeshoPDF(labels, filename){
+  showToast('Sorting & generating Meesho PDF...');
+  const sorted = sortMeeshoLabels(labels);
+  const { PDFDocument } = PDFLib;
+  const outDoc = await PDFDocument.create();
+  const srcDocCache = {};
+
+  for(const lb of sorted){
+    if(!srcDocCache[lb.fileIdx]){
+      srcDocCache[lb.fileIdx] = await PDFDocument.load(meeshoFileBytes[lb.fileIdx]);
+    }
+    const srcDoc  = srcDocCache[lb.fileIdx];
+    const srcPage = srcDoc.getPage(lb.pageIndex);
+    const { width: pw, height: ph } = srcPage.getSize();
+    const embedded = await outDoc.embedPage(srcPage);
+    await addInfoFooter(outDoc, embedded, pw, ph, lb.translation, lb.qty);
+  }
+
+  const pdfBytes = await outDoc.save();
+  const blob = new Blob([pdfBytes], {type:'application/pdf'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Downloaded!');
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────
+function resetApp(){
+  extractedLabels=[];
+  flipkartFileBytes={};
+  meeshoFileBytes={};
+  document.getElementById('upload-zone').style.display='block';
+  document.getElementById('processing').style.display='none';
+  document.getElementById('results').style.display='none';
+  document.getElementById('labels-grid').innerHTML='';
+  document.getElementById('file-input').value='';
+  document.getElementById('prog-fill').style.width='0%';
+  document.getElementById('search-input').value='';
+}
+
+// ── PWA: offline support + installability ──────────────────────────────
+// Registered last, after the tool itself is fully defined, so a slow or
+// failed registration never blocks normal use of the page.
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(err => {
+      console.warn('Service worker registration failed (offline support only — app still works online):', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
