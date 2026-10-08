@@ -1,6 +1,6 @@
 // Bump this whenever index.html (or anything else in APP_SHELL) changes,
 // so returning users get the update instead of a stale cached copy.
-const CACHE_NAME = 'institch-v2';
+const CACHE_NAME = 'institch-v4';
 
 const APP_SHELL = [
   './',
