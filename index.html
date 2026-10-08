@@ -573,9 +573,9 @@ async function processPDF(file,fileIdx,totalFiles){
               sku = extractedSKU;
               _translationFromRaw = lookupTranslation(extractedSKU);
               if(_translationFromRaw) translationParts.push(_translationFromRaw);
-              productName   = '(' + extractedSKU + ') ' + title + (q1 ? ' (Qty: ' + q1 + ')' : '');
+              productName   = '(' + extractedSKU + ') ' + title;
             } else if(title) {
-              productName = title + (q1 ? ' (Qty: ' + q1 + ')' : '');
+              productName = title;
             }
           }
         }
@@ -632,9 +632,8 @@ async function processPDF(file,fileIdx,totalFiles){
               .replace(/[\|,\s]+$/, '')
               .replace(/^\d{1,3}\s+/, '');
 
-            const qN = qtyForHsn(allHsnIdxs[rowNum-1]);
             if(titleN){
-              const itemNStr = (skuN ? '(' + skuN + ') ' : '') + titleN + (qN ? ' (Qty: ' + qN + ')' : '');
+              const itemNStr = (skuN ? '(' + skuN + ') ' : '') + titleN;
               productName = productName ? productName + '\n' + itemNStr : itemNStr;
             }
             if(skuN){
@@ -971,9 +970,12 @@ async function addInfoFooter(outDoc, embedded, outWidthPt, baseHeightPt, transla
     page.drawPage(embedded, {x:0, y:0, width:outWidthPt, height:baseHeightPt});
     return;
   }
-  const page = outDoc.addPage([outWidthPt, baseHeightPt + strip.stripPt]);
-  page.drawPage(embedded, {x:0, y: strip.stripPt, width: outWidthPt, height: baseHeightPt});
-  page.drawImage(strip.pngImage, {x:0, y:0, width: outWidthPt, height: strip.stripPt});
+  // Blank ~1cm strip below the footer: printers clip the last bit of the
+  // page (paper curl / small margin), so the footer text sits above it.
+  const BOTTOM_MARGIN_PT = 28.35;
+  const page = outDoc.addPage([outWidthPt, baseHeightPt + strip.stripPt + BOTTOM_MARGIN_PT]);
+  page.drawPage(embedded, {x:0, y: strip.stripPt + BOTTOM_MARGIN_PT, width: outWidthPt, height: baseHeightPt});
+  page.drawImage(strip.pngImage, {x:0, y: BOTTOM_MARGIN_PT, width: outWidthPt, height: strip.stripPt});
 }
 
 
